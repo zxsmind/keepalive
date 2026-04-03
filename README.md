@@ -139,63 +139,6 @@ For accurate host-level behavior, KeepAlive expects:
 
 Those defaults are already provided in [`docker-compose.yml`](docker-compose.yml).
 
-## GitHub Publishing
-
-Pushing the repository to GitHub does not automatically run KeepAlive on a server. What it can do is automatically build and publish a container image.
-
-This repository includes a GitHub Actions workflow at [`.github/workflows/publish-ghcr.yml`](.github/workflows/publish-ghcr.yml). It publishes an image to:
-
-```text
-ghcr.io/<github-username>/keepalive
-```
-
-Workflow behavior:
-
-- Push to `main`: publishes `latest`
-- Push a tag such as `v1.0.0`: publishes a versioned image tag
-- Manual run from the Actions tab: also supported
-
-After the image is published, a server can run it directly:
-
-```bash
-docker run -d \
-  --name keepalive \
-  --restart unless-stopped \
-  --init \
-  --pid host \
-  --network host \
-  -v keepalive-data:/var/lib/keepalive \
-  ghcr.io/<github-username>/keepalive:latest
-```
-
-## How to Publish This Repository to GitHub
-
-If this folder is not yet a Git repository:
-
-```bash
-git init
-git add .
-git commit -m "Initial KeepAlive release"
-git branch -M main
-git remote add origin https://github.com/<your-username>/keepalive.git
-git push -u origin main
-```
-
-If the GitHub repository already exists and this folder is already initialized:
-
-```bash
-git add .
-git commit -m "Prepare repository for GitHub release"
-git push
-```
-
-After the first push:
-
-1. Open the GitHub repository page.
-2. Confirm that Actions are enabled.
-3. Wait for the `Publish GHCR Image` workflow to finish.
-4. Verify that the package appears under your GitHub account packages or repository packages.
-
 ## Suggested Repository Setup
 
 For a clean public release, it is worth setting:
