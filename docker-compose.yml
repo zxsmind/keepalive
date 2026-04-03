@@ -1,0 +1,37 @@
+services:
+  keepalive:
+    build: .
+    container_name: keepalive
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 20s
+    pid: host
+    network_mode: host
+    environment:
+      LOG_LEVEL: INFO
+      CPU_CORES: "4"
+      CPU_TARGET_PERCENT: "23"
+      MEMORY_TARGET_PERCENT: "23"
+      MEMORY_MAX_RESERVE_OF_AVAILABLE_PERCENT: "50"
+      DISK_TARGET_PERCENT: "23"
+      NETWORK_TARGET_PERCENT: "23"
+      IDLE_PAUSE_PERCENT: "5"
+      IDLE_RESUME_PERCENT: "2"
+      IDLE_RESUME_CYCLES: "3"
+      CONTROL_INTERVAL: "10"
+      EMA_ALPHA: "0.35"
+      DISK_CAPACITY_MIBPS: "0"
+      DISK_CHUNK_KIB: "1024"
+      DISK_WORKING_SET_MIB: "128"
+      DISK_CALIBRATION_MIB: "32"
+      NETWORK_CAPACITY_MBIT: "0"
+      NETWORK_INTERFACE: ""
+      NETWORK_ENDPOINTS: "https://checkip.amazonaws.com,https://cloudflare.com/cdn-cgi/trace"
+      NETWORK_TIMEOUT_SECONDS: "10"
+      WORK_DIR: /var/lib/keepalive
+      HEARTBEAT_FILE: /var/lib/keepalive/heartbeat.json
+    volumes:
+      - keepalive-data:/var/lib/keepalive
+
+volumes:
+  keepalive-data:

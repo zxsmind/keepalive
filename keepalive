@@ -1,0 +1,116 @@
+#!/bin/sh
+set -eu
+
+if [ "$#" -eq 0 ]; then
+  set -- status
+fi
+
+print_help() {
+  cat <<'EOF'
+KeepAlive commands
+
+  keepalive status      Show current status
+  keepalive start       Build and start the service
+  keepalive stop        Stop and remove the service container
+  keepalive restart     Restart the service
+  keepalive logs        Follow service logs
+  keepalive doctor      Validate runtime prerequisites
+  keepalive config      Show normalized runtime configuration
+  keepalive health      Check heartbeat freshness
+  keepalive help        Show this help
+
+Legacy aliases still work: up, down, run, print-config, healthcheck
+EOF
+}
+
+if [ "${KEEPALIVE_DOCKERIZED:-0}" = "1" ]; then
+  case "${1:-status}" in
+    help|-h|--help)
+      print_help
+      exit 0
+      ;;
+  esac
+  exec python -m keepalive_service "$@"
+fi
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+find_compose_dir() {
+  for candidate in \
+    "${KEEPALIVE_HOME:-}" \
+    "$PWD" \
+    "$SCRIPT_DIR" \
+    "$HOME/keepalive" \
+    "/opt/keepalive"
+  do
+    if [ -n "$candidate" ] && [ -f "$candidate/docker-compose.yml" ]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+if ! COMPOSE_DIR=$(find_compose_dir); then
+  echo "docker-compose.yml could not be found. Run inside the project directory or set KEEPALIVE_HOME." >&2
+  exit 1
+fi
+
+COMPOSE_FILE="$COMPOSE_DIR/docker-compose.yml"
+
+COMMAND="$1"
+
+case "$COMMAND" in
+  help|-h|--help)
+    print_help
+    exit 0
+    ;;
+  start|up|run)
+    shift || true
+    exec docker compose -f "$COMPOSE_FILE" up -d --build "$@"
+    ;;
+  stop|down)
+    shift || true
+    exec docker compose -f "$COMPOSE_FILE" down "$@"
+    ;;
+  restart)
+    shift || true
+    docker compose -f "$COMPOSE_FILE" down "$@"
+    exec docker compose -f "$COMPOSE_FILE" up -d --build "$@"
+    ;;
+  logs)
+    shift || true
+    exec docker compose -f "$COMPOSE_FILE" logs -f keepalive "$@"
+    ;;
+  doctor|config|print-config)
+    exec docker compose -f "$COMPOSE_FILE" run --rm --build keepalive keepalive "$@"
+    ;;
+  status|health|healthcheck)
+    ;;
+  *)
+    echo "Unknown command: $COMMAND" >&2
+    echo >&2
+    print_help >&2
+    exit 2
+    ;;
+esac
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "docker is required to use the host-side keepalive command" >&2
+  exit 1
+fi
+
+if ! docker compose -f "$COMPOSE_FILE" ps --status running --services 2>/dev/null | grep -qx "keepalive"; then
+  echo "keepalive container is not running. Start it with: keepalive start" >&2
+  exit 1
+fi
+
+case "$COMMAND" in
+  config)
+    set -- print-config "${@:2}"
+    ;;
+  health)
+    set -- healthcheck "${@:2}"
+    ;;
+esac
+
+exec docker compose -f "$COMPOSE_FILE" exec -T keepalive keepalive "$@"
