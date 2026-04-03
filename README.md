@@ -37,7 +37,6 @@ The result is a control loop rather than a fixed stress command.
 - Atomic heartbeat file for status and health checks
 - Docker health check support
 - Human-friendly `keepalive` command wrapper
-- GitHub Actions workflow for automatic GHCR image publishing
 
 ## Command-Line Experience
 
@@ -138,15 +137,6 @@ For accurate host-level behavior, KeepAlive expects:
 - Writable persistent storage for `/var/lib/keepalive`
 
 Those defaults are already provided in [`docker-compose.yml`](docker-compose.yml).
-
-## Suggested Repository Setup
-
-For a clean public release, it is worth setting:
-
-- Repository description
-- Topics such as `docker`, `linux`, `server`, `monitoring`, `automation`
-- A proper license
-- A first release tag such as `v1.0.0`
 
 ## Verification
 
