@@ -95,8 +95,8 @@ class AppConfig:
         ).expanduser().resolve()
 
         control_interval = _read_float("CONTROL_INTERVAL", 10.0, 0.5, 300.0)
-        idle_pause = _read_float("IDLE_PAUSE_PERCENT", 5.0, 0.0, 100.0)
-        idle_resume = _read_float("IDLE_RESUME_PERCENT", 2.0, 0.0, idle_pause)
+        idle_pause = _read_float("IDLE_PAUSE_PERCENT", 12.0, 0.0, 100.0)
+        idle_resume = _read_float("IDLE_RESUME_PERCENT", 4.0, 0.0, idle_pause)
 
         log_level = os.getenv("LOG_LEVEL", "INFO").upper()
         if log_level not in {"DEBUG", "INFO", "WARNING", "ERROR"}:
@@ -110,7 +110,7 @@ class AppConfig:
             ema_alpha=_read_float("EMA_ALPHA", 0.35, 0.05, 1.0),
             idle_resume_percent=idle_resume,
             idle_pause_percent=idle_pause,
-            idle_resume_cycles=_read_int("IDLE_RESUME_CYCLES", 3, 1, 120),
+            idle_resume_cycles=_read_int("IDLE_RESUME_CYCLES", 6, 1, 120),
             cpu_cores=_read_int("CPU_CORES", os.cpu_count() or 1, 1, 1024),
             cpu=ResourceTarget(
                 enabled=_read_bool("CPU_ENABLED", True),

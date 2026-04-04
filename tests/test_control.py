@@ -27,7 +27,7 @@ class ControlTests(unittest.TestCase):
                 config = AppConfig.from_env()
 
         machine = IdleStateMachine(config)
-        state = machine.evaluate(build_snapshot(cpu=6.0, memory=0.0, disk=0.0, network=0.0))
+        state = machine.evaluate(build_snapshot(cpu=13.0, memory=0.0, disk=0.0, network=0.0))
         self.assertTrue(state.paused)
         self.assertEqual(state.pause_reason, "cpu")
 
@@ -37,7 +37,7 @@ class ControlTests(unittest.TestCase):
                 config = AppConfig.from_env()
 
         machine = IdleStateMachine(config)
-        machine.evaluate(build_snapshot(cpu=6.0, memory=0.0, disk=0.0, network=0.0))
+        machine.evaluate(build_snapshot(cpu=13.0, memory=0.0, disk=0.0, network=0.0))
         state = machine.evaluate(build_snapshot(cpu=1.0, memory=1.0, disk=1.0, network=1.0))
         self.assertTrue(state.paused)
         state = machine.evaluate(build_snapshot(cpu=1.0, memory=1.0, disk=1.0, network=1.0))

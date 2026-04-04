@@ -124,9 +124,9 @@ All runtime settings are exposed as environment variables. The defaults live in 
 | `DISK_TARGET_PERCENT` | `0` | Target disk throughput percentage while the host is idle |
 | `NETWORK_ENABLED` | `false` | Enables the network controller |
 | `NETWORK_TARGET_PERCENT` | `0` | Target network throughput percentage while the host is idle |
-| `IDLE_PAUSE_PERCENT` | `5` | Real CPU, disk, or network usage above this pauses synthetic generation |
-| `IDLE_RESUME_PERCENT` | `2` | Real CPU, disk, and network usage must fall below this to resume |
-| `IDLE_RESUME_CYCLES` | `3` | Number of consecutive quiet loops required before resuming |
+| `IDLE_PAUSE_PERCENT` | `12` | Real CPU, disk, or network usage above this pauses synthetic generation |
+| `IDLE_RESUME_PERCENT` | `4` | Real CPU, disk, and network usage must fall below this to resume |
+| `IDLE_RESUME_CYCLES` | `6` | Number of consecutive quiet loops required before resuming |
 | `CONTROL_INTERVAL` | `10` | Seconds between control decisions |
 | `DISK_CAPACITY_MIBPS` | `0` | Disk throughput ceiling; `0` means auto-calibrate at startup |
 | `NETWORK_CAPACITY_MBIT` | `0` | NIC speed in Mbit; `0` means auto-detect or fall back |
