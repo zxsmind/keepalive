@@ -9,12 +9,16 @@ services:
     network_mode: host
     environment:
       LOG_LEVEL: INFO
+      CPU_ENABLED: "true"
       CPU_CORES: "4"
       CPU_TARGET_PERCENT: "23"
-      MEMORY_TARGET_PERCENT: "23"
+      MEMORY_ENABLED: "false"
+      MEMORY_TARGET_PERCENT: "0"
       MEMORY_MAX_RESERVE_OF_AVAILABLE_PERCENT: "50"
-      DISK_TARGET_PERCENT: "23"
-      NETWORK_TARGET_PERCENT: "23"
+      DISK_ENABLED: "false"
+      DISK_TARGET_PERCENT: "0"
+      NETWORK_ENABLED: "false"
+      NETWORK_TARGET_PERCENT: "0"
       IDLE_PAUSE_PERCENT: "5"
       IDLE_RESUME_PERCENT: "2"
       IDLE_RESUME_CYCLES: "3"

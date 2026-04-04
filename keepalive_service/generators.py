@@ -185,6 +185,17 @@ class MemoryGenerator:
         gc.collect()
 
 
+class NullDiskGenerator:
+    def set_target(self, percent: float) -> None:
+        return None
+
+    def record_and_reset_bytes(self) -> int:
+        return 0
+
+    def stop(self) -> None:
+        return None
+
+
 class DiskGenerator:
     def __init__(self, config: AppConfig):
         self._config = config
@@ -327,3 +338,14 @@ class NetworkGenerator:
                 return transferred
         except Exception:
             return 0
+
+
+class NullNetworkGenerator:
+    def set_target(self, percent: float) -> None:
+        return None
+
+    def record_and_reset_bytes(self) -> int:
+        return 0
+
+    def stop(self) -> None:
+        return None

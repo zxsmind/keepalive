@@ -35,7 +35,8 @@ def format_status(payload: dict[str, object], max_age_seconds: int, now: float |
     heartbeat_age = max(0, int(current_time - heartbeat_at))
     state = "paused" if payload.get("paused", False) else "active"
     reason = payload.get("reason") or "-"
-    load_score = _synthetic_load_score(payload)
+    controllers = payload.get("controllers", {})
+    load_score = _synthetic_load_score(payload, controllers)
     freshness = "stale" if heartbeat_age > max_age_seconds else "fresh"
 
     lines = [
@@ -55,15 +56,18 @@ def format_status(payload: dict[str, object], max_age_seconds: int, now: float |
         if not isinstance(sample, dict):
             continue
         target = _safe_float(targets.get(resource)) if isinstance(targets, dict) else 0.0
-        lines.append(_format_resource_line(resource, sample, target))
+        enabled = bool(controllers.get(resource, True)) if isinstance(controllers, dict) else True
+        lines.append(_format_resource_line(resource, sample, target, enabled))
 
     return "\n".join(lines)
 
 
-def _format_resource_line(resource: str, sample: dict[str, object], target: float) -> str:
+def _format_resource_line(resource: str, sample: dict[str, object], target: float, enabled: bool) -> str:
     total = _safe_float(sample.get("total_percent"))
     real = _safe_float(sample.get("real_percent"))
     synthetic = _safe_float(sample.get("synthetic_percent"))
+    if not enabled:
+        return f"{RESOURCE_LABELS[resource]:<8} disabled"
     return (
         f"{RESOURCE_LABELS[resource]:<8} "
         f"total={total:5.1f}%  "
@@ -73,9 +77,11 @@ def _format_resource_line(resource: str, sample: dict[str, object], target: floa
     )
 
 
-def _synthetic_load_score(payload: dict[str, object]) -> float:
+def _synthetic_load_score(payload: dict[str, object], controllers: object) -> float:
     values: list[float] = []
     for resource in RESOURCE_ORDER:
+        if isinstance(controllers, dict) and not bool(controllers.get(resource, True)):
+            continue
         sample = payload.get(resource)
         if isinstance(sample, dict):
             values.append(_safe_float(sample.get("synthetic_percent")))

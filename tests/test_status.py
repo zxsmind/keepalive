@@ -29,6 +29,37 @@ class StatusTests(unittest.TestCase):
         self.assertIn("CPU      total= 18.0%  real=  2.0%  keepalive= 16.0%  target= 20.0%", output)
         self.assertIn("Heartbeat  :", output)
 
+    def test_disabled_resources_are_marked_as_disabled(self):
+        payload = {
+            "started_at": 1_700_000_000,
+            "timestamp": 1_700_000_120,
+            "paused": False,
+            "reason": None,
+            "controllers": {
+                "cpu": True,
+                "memory": False,
+                "disk": False,
+                "network": False,
+            },
+            "targets": {
+                "cpu": 23.0,
+                "memory": 0.0,
+                "disk": 0.0,
+                "network": 0.0,
+            },
+            "cpu": {"total_percent": 20.0, "real_percent": 1.0, "synthetic_percent": 19.0},
+            "memory": {"total_percent": 7.0, "real_percent": 7.0, "synthetic_percent": 0.0},
+            "disk": {"total_percent": 0.0, "real_percent": 0.0, "synthetic_percent": 0.0},
+            "network": {"total_percent": 0.0, "real_percent": 0.0, "synthetic_percent": 0.0},
+        }
+
+        output = format_status(payload, max_age_seconds=300, now=1_700_000_180)
+
+        self.assertIn("Load Score : 19.0% synthetic", output)
+        self.assertIn("Memory   disabled", output)
+        self.assertIn("Disk     disabled", output)
+        self.assertIn("Network  disabled", output)
+
 
 if __name__ == "__main__":
     unittest.main()

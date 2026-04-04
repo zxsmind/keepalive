@@ -54,7 +54,19 @@ class ControlTests(unittest.TestCase):
 
     def test_planner_tops_up_to_targets_when_active(self):
         with tempfile.TemporaryDirectory() as directory:
-            with patch.dict(os.environ, {"WORK_DIR": directory}, clear=True):
+            with patch.dict(
+                os.environ,
+                {
+                    "WORK_DIR": directory,
+                    "MEMORY_ENABLED": "true",
+                    "MEMORY_TARGET_PERCENT": "23",
+                    "DISK_ENABLED": "true",
+                    "DISK_TARGET_PERCENT": "23",
+                    "NETWORK_ENABLED": "true",
+                    "NETWORK_TARGET_PERCENT": "23",
+                },
+                clear=True,
+            ):
                 config = AppConfig.from_env()
 
         planner = TargetPlanner(config)
@@ -64,6 +76,19 @@ class ControlTests(unittest.TestCase):
         self.assertEqual(plan.memory_percent, 15.0)
         self.assertEqual(plan.disk_percent, 21.0)
         self.assertEqual(plan.network_percent, 20.0)
+
+    def test_defaults_are_cpu_first(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.dict(os.environ, {"WORK_DIR": directory}, clear=True):
+                config = AppConfig.from_env()
+
+        planner = TargetPlanner(config)
+        state = IdleStateMachine(config).state
+        plan = planner.build(build_snapshot(cpu=4.0, memory=8.0, disk=2.0, network=3.0), state)
+        self.assertEqual(plan.cpu_percent, 19.0)
+        self.assertEqual(plan.memory_percent, 0.0)
+        self.assertEqual(plan.disk_percent, 0.0)
+        self.assertEqual(plan.network_percent, 0.0)
 
 
 if __name__ == "__main__":

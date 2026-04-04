@@ -9,7 +9,14 @@ import psutil
 from keepalive_service.config import AppConfig
 from keepalive_service.control import IdleStateMachine, TargetPlanner
 from keepalive_service.diagnostics import RuntimeDoctor
-from keepalive_service.generators import CPUGenerator, DiskGenerator, MemoryGenerator, NetworkGenerator
+from keepalive_service.generators import (
+    CPUGenerator,
+    DiskGenerator,
+    MemoryGenerator,
+    NetworkGenerator,
+    NullDiskGenerator,
+    NullNetworkGenerator,
+)
 from keepalive_service.metrics import CapacityResolver, MetricsSampler
 
 
@@ -25,9 +32,13 @@ class KeepAliveService:
             reconfigure_grace_seconds=max(config.control_interval_seconds * 1.5, 10.0),
         )
         self._memory = MemoryGenerator()
-        self._disk = DiskGenerator(config)
+        self._disk = DiskGenerator(config) if config.disk.enabled else NullDiskGenerator()
         capacity = CapacityResolver(config, logger).resolve()
-        self._network = NetworkGenerator(config, capacity.network_bytes_per_second)
+        self._network = (
+            NetworkGenerator(config, capacity.network_bytes_per_second)
+            if config.network.enabled
+            else NullNetworkGenerator()
+        )
         self._sampler = MetricsSampler(config, capacity, self._cpu, self._memory, self._disk, self._network)
         self._state_machine = IdleStateMachine(config)
         self._planner = TargetPlanner(config)
@@ -98,6 +109,13 @@ class KeepAliveService:
             self._config.memory.target_percent,
             self._config.disk.target_percent,
             self._config.network.target_percent,
+        )
+        self._log.info(
+            "controllers cpu=%s memory=%s disk=%s network=%s",
+            "on" if self._config.cpu.enabled else "off",
+            "on" if self._config.memory.enabled else "off",
+            "on" if self._config.disk.enabled else "off",
+            "on" if self._config.network.enabled else "off",
         )
         self._log.info(
             "idle pause=%.1f%% resume=%.1f%% after %d cycles",

@@ -14,6 +14,9 @@ class ConfigTests(unittest.TestCase):
                 config = AppConfig.from_env()
         self.assertEqual(config.cpu.target_percent, 23.0)
         self.assertTrue(config.cpu.enabled)
+        self.assertFalse(config.memory.enabled)
+        self.assertFalse(config.disk.enabled)
+        self.assertFalse(config.network.enabled)
 
     def test_invalid_pause_resume_pair_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -35,6 +38,7 @@ class ConfigTests(unittest.TestCase):
                 config = AppConfig.from_env()
         payload = _config_payload(config)
         self.assertIn("memory_max_reserve_of_available_percent", payload)
+        self.assertFalse(payload["memory_enabled"])
 
 
 if __name__ == "__main__":

@@ -43,8 +43,14 @@ class CapacityResolver:
         self._log = logger
 
     def resolve(self) -> CapacityInfo:
-        disk_capacity = self._config.disk_capacity_mib_per_second or self._benchmark_disk_capacity()
-        network_interface, network_mbit = self._resolve_network_capacity()
+        disk_capacity = 1.0
+        if self._config.disk.enabled:
+            disk_capacity = self._config.disk_capacity_mib_per_second or self._benchmark_disk_capacity()
+
+        network_interface = None
+        network_mbit = 1.0
+        if self._config.network.enabled:
+            network_interface, network_mbit = self._resolve_network_capacity()
         return CapacityInfo(
             disk_mib_per_second=disk_capacity,
             network_mbit=network_mbit,
@@ -122,6 +128,7 @@ class MetricsSampler:
         disk: DiskGenerator,
         network: NetworkGenerator,
     ):
+        self._config = config
         self._capacity = capacity
         self._cpu = cpu
         self._memory = memory
@@ -144,19 +151,27 @@ class MetricsSampler:
         total_cpu = self._cpu_smoother.update(psutil.cpu_percent(interval=None))
         memory_info = psutil.virtual_memory()
         total_memory = self._memory_smoother.update(memory_info.percent)
-        synthetic_memory = self._memory.synthetic_percent(memory_info.total)
+        synthetic_memory = self._memory.synthetic_percent(memory_info.total) if self._config.memory.enabled else 0.0
 
-        total_disk = self._disk_smoother.update(self._read_disk_percent(elapsed))
-        synthetic_disk = (
-            (self._disk.record_and_reset_bytes() / 1024 / 1024) / elapsed / self._capacity.disk_mib_per_second
-        ) * 100.0
+        if self._config.disk.enabled:
+            total_disk = self._disk_smoother.update(self._read_disk_percent(elapsed))
+            synthetic_disk = (
+                (self._disk.record_and_reset_bytes() / 1024 / 1024) / elapsed / self._capacity.disk_mib_per_second
+            ) * 100.0
+        else:
+            total_disk = 0.0
+            synthetic_disk = 0.0
 
-        total_network = self._network_smoother.update(self._read_network_percent(elapsed))
-        synthetic_network = (
-            (self._network.record_and_reset_bytes() / elapsed) / self._capacity.network_bytes_per_second
-        ) * 100.0
+        if self._config.network.enabled:
+            total_network = self._network_smoother.update(self._read_network_percent(elapsed))
+            synthetic_network = (
+                (self._network.record_and_reset_bytes() / elapsed) / self._capacity.network_bytes_per_second
+            ) * 100.0
+        else:
+            total_network = 0.0
+            synthetic_network = 0.0
 
-        synthetic_cpu = self._cpu.estimate_percent(elapsed)
+        synthetic_cpu = self._cpu.estimate_percent(elapsed) if self._config.cpu.enabled else 0.0
 
         return Snapshot(
             cpu=self._build_sample(total_cpu, synthetic_cpu),
@@ -181,6 +196,12 @@ class MetricsSampler:
             "paused": paused,
             "reason": reason,
             "targets": targets,
+            "controllers": {
+                "cpu": self._config.cpu.enabled,
+                "memory": self._config.memory.enabled,
+                "disk": self._config.disk.enabled,
+                "network": self._config.network.enabled,
+            },
             "cpu": snapshot.cpu.__dict__,
             "memory": snapshot.memory.__dict__,
             "disk": snapshot.disk.__dict__,

@@ -84,6 +84,9 @@ class AppConfig:
     heartbeat_file: Path
     log_level: str
 
+    def controller_enabled(self, resource: str) -> bool:
+        return bool(getattr(self, resource).enabled)
+
     @classmethod
     def from_env(cls) -> "AppConfig":
         work_dir = Path(os.getenv("WORK_DIR", "/var/lib/keepalive")).expanduser().resolve()
@@ -114,8 +117,8 @@ class AppConfig:
                 target_percent=_read_float("CPU_TARGET_PERCENT", 23.0, 0.0, 100.0),
             ),
             memory=ResourceTarget(
-                enabled=_read_bool("MEMORY_ENABLED", True),
-                target_percent=_read_float("MEMORY_TARGET_PERCENT", 23.0, 0.0, 95.0),
+                enabled=_read_bool("MEMORY_ENABLED", False),
+                target_percent=_read_float("MEMORY_TARGET_PERCENT", 0.0, 0.0, 95.0),
             ),
             memory_max_reserve_of_available_percent=_read_float(
                 "MEMORY_MAX_RESERVE_OF_AVAILABLE_PERCENT",
@@ -124,12 +127,12 @@ class AppConfig:
                 95.0,
             ),
             disk=ResourceTarget(
-                enabled=_read_bool("DISK_ENABLED", True),
-                target_percent=_read_float("DISK_TARGET_PERCENT", 23.0, 0.0, 100.0),
+                enabled=_read_bool("DISK_ENABLED", False),
+                target_percent=_read_float("DISK_TARGET_PERCENT", 0.0, 0.0, 100.0),
             ),
             network=ResourceTarget(
-                enabled=_read_bool("NETWORK_ENABLED", True),
-                target_percent=_read_float("NETWORK_TARGET_PERCENT", 23.0, 0.0, 100.0),
+                enabled=_read_bool("NETWORK_ENABLED", False),
+                target_percent=_read_float("NETWORK_TARGET_PERCENT", 0.0, 0.0, 100.0),
             ),
             disk_capacity_mib_per_second=None if disk_capacity == 0.0 else disk_capacity,
             disk_chunk_kib=_read_int("DISK_CHUNK_KIB", 1024, 64, 16384),

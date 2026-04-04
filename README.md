@@ -29,10 +29,13 @@ Each resource has a target percentage. When the host is quiet, KeepAlive pushes 
 
 The result is a control loop rather than a fixed stress command.
 
+The hardened default profile is CPU-first. Memory, disk, and network controllers are available, but they are opt-in rather than enabled by default.
+
 ## Features
 
 - Adaptive control loop with pause and resume hysteresis
-- Separate generators for CPU, memory, disk, and network activity
+- Stable CPU-first default profile
+- Optional generators for memory, disk, and network activity
 - Process-tree based synthetic CPU attribution
 - Atomic heartbeat file for status and health checks
 - Docker health check support
@@ -66,13 +69,13 @@ State      : active (fresh)
 Reason     : -
 Started    : 2026-04-04 13:40:21 UTC (2h 14m up)
 Heartbeat  : 2026-04-04 15:54:52 UTC (4s ago)
-Load Score : 14.5% synthetic
+Load Score : 20.9% synthetic
 
 Resources
 CPU      total= 22.7%  real=  1.8%  keepalive= 20.9%  target= 23.0%
-Memory   total= 31.4%  real=  8.4%  keepalive= 23.0%  target= 23.0%
-Disk     total= 23.1%  real=  0.3%  keepalive= 22.8%  target= 23.0%
-Network  total= 23.0%  real=  0.4%  keepalive= 22.6%  target= 23.0%
+Memory   disabled
+Disk     disabled
+Network  disabled
 ```
 
 ## Default Resource Targets
@@ -80,9 +83,9 @@ Network  total= 23.0%  real=  0.4%  keepalive= 22.6%  target= 23.0%
 Repository defaults are intentionally aligned:
 
 - CPU target: `23%`
-- Memory target: `23%`
-- Disk target: `23%`
-- Network target: `23%`
+- Memory target: `0%` by default, opt-in
+- Disk target: `0%` by default, opt-in
+- Network target: `0%` by default, opt-in
 
 These values are configurable through environment variables in [`docker-compose.yml`](docker-compose.yml).
 
@@ -112,11 +115,15 @@ All runtime settings are exposed as environment variables. The defaults live in 
 
 | Variable | Default | Description |
 |---|---:|---|
+| `CPU_ENABLED` | `true` | Enables the CPU controller |
 | `CPU_TARGET_PERCENT` | `23` | Target total CPU usage while the host is idle |
-| `MEMORY_TARGET_PERCENT` | `23` | Target total memory usage while the host is idle |
+| `MEMORY_ENABLED` | `false` | Enables the memory controller |
+| `MEMORY_TARGET_PERCENT` | `0` | Target total memory usage while the host is idle |
 | `MEMORY_MAX_RESERVE_OF_AVAILABLE_PERCENT` | `50` | Upper safety cap for reserving currently free memory |
-| `DISK_TARGET_PERCENT` | `23` | Target disk throughput percentage while the host is idle |
-| `NETWORK_TARGET_PERCENT` | `23` | Target network throughput percentage while the host is idle |
+| `DISK_ENABLED` | `false` | Enables the disk controller |
+| `DISK_TARGET_PERCENT` | `0` | Target disk throughput percentage while the host is idle |
+| `NETWORK_ENABLED` | `false` | Enables the network controller |
+| `NETWORK_TARGET_PERCENT` | `0` | Target network throughput percentage while the host is idle |
 | `IDLE_PAUSE_PERCENT` | `5` | Real CPU, disk, or network usage above this pauses synthetic generation |
 | `IDLE_RESUME_PERCENT` | `2` | Real CPU, disk, and network usage must fall below this to resume |
 | `IDLE_RESUME_CYCLES` | `3` | Number of consecutive quiet loops required before resuming |
@@ -159,5 +166,6 @@ keepalive logs
 
 - CPU and memory control are the most directly measurable signals.
 - Disk and network percentages depend on capacity calibration and are therefore inherently approximate.
+- The CPU-first default profile is the recommended production mode.
 - Docker Desktop can obscure true host behavior behind a Linux VM; a real Linux host is strongly preferred.
 - Resource percentages should be tuned carefully for the environment where KeepAlive will run.

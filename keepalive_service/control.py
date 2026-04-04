@@ -29,11 +29,13 @@ class IdleStateMachine:
         return self._state
 
     def evaluate(self, snapshot: Snapshot) -> ServiceState:
-        pause_values = {
-            "cpu": snapshot.cpu.real_percent,
-            "disk": snapshot.disk.real_percent,
-            "network": snapshot.network.real_percent,
-        }
+        pause_values: dict[str, float] = {}
+        if self._config.cpu.enabled:
+            pause_values["cpu"] = snapshot.cpu.real_percent
+        if self._config.disk.enabled:
+            pause_values["disk"] = snapshot.disk.real_percent
+        if self._config.network.enabled:
+            pause_values["network"] = snapshot.network.real_percent
 
         if not self._state.paused:
             for name, value in pause_values.items():
@@ -41,6 +43,11 @@ class IdleStateMachine:
                     self._state = ServiceState(paused=True, pause_reason=name)
                     self._resume_streak = 0
                     return self._state
+            return self._state
+
+        if not pause_values:
+            self._state = ServiceState(paused=False, pause_reason=None)
+            self._resume_streak = 0
             return self._state
 
         if all(value <= self._config.idle_resume_percent for value in pause_values.values()):
