@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import gc
-import mmap
 import os
 import subprocess
 import threading
@@ -151,7 +150,7 @@ class CPUGenerator:
 class MemoryGenerator:
     def __init__(self, block_size_mib: int = 16):
         self._block_size = block_size_mib * 1024 * 1024
-        self._buffers: list[mmap.mmap] = []
+        self._buffers: list[bytearray] = []
         self._reserved_bytes = 0
         self._lock = threading.Lock()
 
@@ -159,15 +158,14 @@ class MemoryGenerator:
         target_bytes = int(total_memory_bytes * (percent / 100.0))
         with self._lock:
             while self._reserved_bytes < target_bytes:
-                block = mmap.mmap(-1, self._block_size)
+                block = bytearray(self._block_size)
                 for offset in range(0, self._block_size, 4096):
-                    block[offset:offset + 1] = b"\0"
+                    block[offset] = 1
                 self._buffers.append(block)
                 self._reserved_bytes += self._block_size
 
             while self._reserved_bytes - self._block_size >= target_bytes and self._buffers:
-                block = self._buffers.pop()
-                block.close()
+                self._buffers.pop()
                 self._reserved_bytes -= self._block_size
 
         if target_bytes == 0:
@@ -182,7 +180,7 @@ class MemoryGenerator:
     def stop(self) -> None:
         with self._lock:
             while self._buffers:
-                self._buffers.pop().close()
+                self._buffers.pop()
             self._reserved_bytes = 0
         gc.collect()
 
@@ -238,11 +236,12 @@ class DiskGenerator:
                 while time.monotonic() < active_until and not self._stop.is_set():
                     handle.seek(self._offset)
                     handle.write(chunk)
-                    handle.flush()
-                    os.fsync(handle.fileno())
                     self._offset = (self._offset + len(chunk)) % working_set_bytes
                     with self._lock:
                         self._bytes_written += len(chunk)
+
+                handle.flush()
+                os.fsync(handle.fileno())
 
                 remaining = max(0.0, period_seconds - (time.monotonic() - cycle_start))
                 if remaining > 0:
@@ -290,10 +289,18 @@ class NetworkGenerator:
 
             budget = int(self._capacity_bytes_per_second * (target_percent / 100.0) * period_seconds)
             budget = max(1024, budget)
-            self._fetch_bytes(budget)
+            self._consume_budget(budget)
             self._stop.wait(period_seconds)
 
-    def _fetch_bytes(self, budget: int) -> None:
+    def _consume_budget(self, budget: int) -> None:
+        remaining_budget = budget
+        while remaining_budget > 0 and not self._stop.is_set():
+            transferred = self._fetch_bytes(remaining_budget)
+            if transferred <= 0:
+                break
+            remaining_budget -= transferred
+
+    def _fetch_bytes(self, budget: int) -> int:
         url = self._config.network_endpoints[self._endpoint_index % len(self._config.network_endpoints)]
         self._endpoint_index += 1
         request = urllib.request.Request(
@@ -308,12 +315,15 @@ class NetworkGenerator:
         try:
             with urllib.request.urlopen(request, timeout=self._config.network_timeout_seconds) as response:
                 remaining = budget
+                transferred = 0
                 while remaining > 0 and not self._stop.is_set():
                     chunk = response.read(min(64 * 1024, remaining))
                     if not chunk:
                         break
                     remaining -= len(chunk)
+                    transferred += len(chunk)
                     with self._lock:
                         self._bytes_transferred += len(chunk)
+                return transferred
         except Exception:
-            return
+            return 0
