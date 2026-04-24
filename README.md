@@ -94,7 +94,7 @@ These values are configurable through environment variables in [`docker-compose.
 ### Local project deployment
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/zxsmind/keepalive/
 cd keepalive
 sudo install -m 755 ./keepalive /usr/local/bin/keepalive
 keepalive doctor
