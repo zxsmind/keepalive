@@ -177,3 +177,8 @@ keepalive logs
 - The CPU-first default profile is the recommended production mode.
 - Docker Desktop can obscure true host behavior behind a Linux VM; a real Linux host is strongly preferred.
 - Resource percentages should be tuned carefully for the environment where KeepAlive will run.
+
+
+## License
+
+Released under the MIT License. See [LICENSE](LICENSE) for details.
