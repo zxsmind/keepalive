@@ -35,7 +35,7 @@ class KeepAliveService:
         self._disk = DiskGenerator(config) if config.disk.enabled else NullDiskGenerator()
         capacity = CapacityResolver(config, logger).resolve()
         self._network = (
-            NetworkGenerator(config, capacity.network_bytes_per_second)
+            NetworkGenerator(config, capacity.network_bytes_per_second, logger)
             if config.network.enabled
             else NullNetworkGenerator()
         )

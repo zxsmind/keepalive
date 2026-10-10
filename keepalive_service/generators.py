@@ -260,8 +260,9 @@ class DiskGenerator:
 
 
 class NetworkGenerator:
-    def __init__(self, config: AppConfig, capacity_bytes_per_second: float):
+    def __init__(self, config: AppConfig, capacity_bytes_per_second: float, logger):
         self._config = config
+        self._log = logger
         self._capacity_bytes_per_second = capacity_bytes_per_second
         self._bytes_transferred = 0
         self._target_percent = 0.0
@@ -336,7 +337,8 @@ class NetworkGenerator:
                     with self._lock:
                         self._bytes_transferred += len(chunk)
                 return transferred
-        except Exception:
+        except Exception as exc:
+            self._log.warning("network endpoint fetch failed: %s (%s)", url, exc)
             return 0
 
 
