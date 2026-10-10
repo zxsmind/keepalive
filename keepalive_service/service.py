@@ -8,7 +8,7 @@ import psutil
 
 from keepalive_service.config import AppConfig
 from keepalive_service.control import IdleStateMachine, TargetPlanner
-from keepalive_service.diagnostics import RuntimeDoctor
+from keepalive_service.diagnostics import RuntimeCheckError, RuntimeDoctor
 from keepalive_service.generators import (
     CPUGenerator,
     DiskGenerator,
@@ -46,7 +46,11 @@ class KeepAliveService:
     def run(self) -> int:
         self._config.work_dir.mkdir(parents=True, exist_ok=True)
         self._install_signal_handlers()
-        self._run_diagnostics()
+        try:
+            self._run_diagnostics()
+        except RuntimeCheckError as exc:
+            self._log.error("runtime check failed: %s", exc)
+            return 1
         self._log_startup()
 
         try:
