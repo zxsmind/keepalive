@@ -105,9 +105,6 @@ if ! docker compose -f "$COMPOSE_FILE" ps --status running --services 2>/dev/nul
 fi
 
 case "$COMMAND" in
-  config)
-    set -- print-config "${@:2}"
-    ;;
   health)
     set -- healthcheck "${@:2}"
     ;;
