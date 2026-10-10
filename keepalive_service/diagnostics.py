@@ -36,9 +36,14 @@ class RuntimeDoctor:
         if not os.access(self._config.work_dir, os.W_OK):
             raise RuntimeCheckError(f"work directory is not writable: {self._config.work_dir}")
 
-        if self._config.cpu_cores > (os.cpu_count() or 1):
+        visible_cpus = os.cpu_count() or 1
+        if self._config.cpu_cores > visible_cpus:
             warnings.append(
                 "CPU_CORES is greater than visible CPU count; synthetic CPU estimation may be skewed"
+            )
+        elif self._config.cpu_cores < visible_cpus:
+            warnings.append(
+                "CPU_CORES is lower than visible CPU count; per-worker load may not reach the configured total CPU target"
             )
 
         if self._config.network.enabled:

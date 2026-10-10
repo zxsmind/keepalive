@@ -26,6 +26,25 @@ class RuntimeDoctorTests(unittest.TestCase):
 
         self.assertTrue(report.warnings)
 
+    def test_reports_warning_when_cpu_cores_below_visible_count(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.dict(
+                os.environ,
+                {
+                    "WORK_DIR": directory,
+                    "CPU_CORES": "1",
+                },
+                clear=True,
+            ):
+                config = AppConfig.from_env()
+
+        with patch("keepalive_service.diagnostics.platform.system", return_value="Linux"):
+            with patch("keepalive_service.diagnostics.shutil.which", return_value="/usr/bin/stress-ng"):
+                with patch("keepalive_service.diagnostics.os.cpu_count", return_value=8):
+                    report = RuntimeDoctor(config).inspect()
+
+        self.assertTrue(report.warnings)
+
 
 if __name__ == "__main__":
     unittest.main()
