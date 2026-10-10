@@ -117,6 +117,7 @@ All runtime settings are exposed as environment variables. The defaults live in 
 |---|---:|---|
 | `CPU_ENABLED` | `true` | Enables the CPU controller |
 | `CPU_TARGET_PERCENT` | `23` | Target total CPU usage while the host is idle |
+| `CPU_CORES` | visible core count | Number of `stress-ng` workers used for synthetic CPU |
 | `MEMORY_ENABLED` | `false` | Enables the memory controller |
 | `MEMORY_TARGET_PERCENT` | `0` | Target total memory usage while the host is idle |
 | `MEMORY_MAX_RESERVE_OF_AVAILABLE_PERCENT` | `50` | Upper safety cap for reserving currently free memory |
@@ -128,11 +129,18 @@ All runtime settings are exposed as environment variables. The defaults live in 
 | `IDLE_RESUME_PERCENT` | `4` | Real CPU, disk, and network usage must fall below this to resume |
 | `IDLE_RESUME_CYCLES` | `6` | Number of consecutive quiet loops required before resuming |
 | `CONTROL_INTERVAL` | `10` | Seconds between control decisions |
+| `EMA_ALPHA` | `0.35` | Smoothing factor applied to sampled resource percentages |
 | `DISK_CAPACITY_MIBPS` | `0` | Disk throughput ceiling; `0` means auto-calibrate at startup |
+| `DISK_CHUNK_KIB` | `1024` | Size of each disk write in KiB |
+| `DISK_WORKING_SET_MIB` | `128` | Working file size the disk generator cycles over |
+| `DISK_CALIBRATION_MIB` | `32` | Sample size used for the startup disk capacity benchmark |
 | `NETWORK_CAPACITY_MBIT` | `0` | NIC speed in Mbit; `0` means auto-detect or fall back |
 | `NETWORK_INTERFACE` | empty | Specific NIC to monitor |
 | `NETWORK_ENDPOINTS` | built-in list | Comma-separated URLs used for synthetic network activity |
+| `NETWORK_TIMEOUT_SECONDS` | `10` | Timeout for each synthetic endpoint fetch |
 | `WORK_DIR` | `/var/lib/keepalive` | Runtime directory for heartbeat and working files |
+| `HEARTBEAT_FILE` | `$WORK_DIR/heartbeat.json` | Path of the heartbeat file written each loop |
+| `LOG_LEVEL` | `INFO` | Logging verbosity: `DEBUG`, `INFO`, `WARNING`, or `ERROR` |
 
 ## Docker Requirements
 
